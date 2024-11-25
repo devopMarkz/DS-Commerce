@@ -5,9 +5,7 @@ import com.devsuperior.dscommerce.entities.Product;
 import com.devsuperior.dscommerce.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +34,33 @@ public class ProductService {
         Page<Product> products = productRepository.findAll(pageable);
         Page<ProductDTO> productDTOS = products.map(product -> new ProductDTO(product.getId(), product.getName(), product.getDescription(), product.getPrice(), product.getImgUrl()));
         return productDTOS;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ProductDTO insert(ProductDTO productDTO){
+        Product product = convertDTOToProduct(productDTO);
+        product = productRepository.save(product);
+        return convertProductToDTO(product);
+    }
+
+    private ProductDTO convertProductToDTO(Product product){
+        return new ProductDTO(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getImgUrl()
+        );
+    }
+
+    private Product convertDTOToProduct(ProductDTO productDTO){
+        return new Product(
+                null,
+                productDTO.name(),
+                productDTO.description(),
+                productDTO.price(),
+                productDTO.imgUrl()
+        );
     }
 
 }
