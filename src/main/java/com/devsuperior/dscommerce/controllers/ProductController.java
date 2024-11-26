@@ -1,6 +1,7 @@
 package com.devsuperior.dscommerce.controllers;
 
 import com.devsuperior.dscommerce.dto.ProductDTO;
+import com.devsuperior.dscommerce.entities.Product;
 import com.devsuperior.dscommerce.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
 
@@ -27,34 +29,44 @@ public class ProductController {
         try {
             ProductDTO productDTO = productService.findById(id);
             return ResponseEntity.ok(productDTO);
-        } catch(NoSuchElementException | NullPointerException e) {
+        } catch (NoSuchElementException | NullPointerException e) {
             return ResponseEntity.notFound().build();
         }
-}
+    }
 
-@GetMapping
-public ResponseEntity<Page<ProductDTO>> findAll(@PageableDefault(page = 0, size = 10) Pageable pageable) {
-    Page<ProductDTO> productDTOS = productService.findAll(pageable);
-    return ResponseEntity.ok(productDTOS);
-}
+    @GetMapping
+    public ResponseEntity<Page<ProductDTO>> findAll(@PageableDefault(page = 0, size = 10) Pageable pageable) {
+        Page<ProductDTO> productDTOS = productService.findAll(pageable);
+        return ResponseEntity.ok(productDTOS);
+    }
 
-@PostMapping
-public ResponseEntity<ProductDTO> insert(@RequestBody ProductDTO productDTO) {
-    productDTO = productService.insert(productDTO);
+    @PostMapping
+    public ResponseEntity<ProductDTO> insert(@RequestBody ProductDTO productDTO) {
+        productDTO = productService.insert(productDTO);
 
-    URI location = ServletUriComponentsBuilder
-            .fromCurrentRequest()
-            .path("/{id}")
-            .buildAndExpand(productDTO.id())
-            .toUri();
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(productDTO.id())
+                .toUri();
 
-    return ResponseEntity.created(location).body(productDTO);
-}
+        return ResponseEntity.created(location).body(productDTO);
+    }
 
-@PutMapping("/{id}")
-public ResponseEntity<Void> updateProduct(@PathVariable(name = "id") Long id, @RequestBody ProductDTO productDTO) {
-    productService.update(id, productDTO);
-    return ResponseEntity.noContent().build();
-}
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDTO> update(@PathVariable(name = "id") Long id, @RequestBody ProductDTO productDTO) {
+        productDTO = productService.update(id, productDTO);
+        return ResponseEntity.ok(productDTO);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable(name = "id") Long id){
+        try {
+            productService.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (SQLException e){
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }
