@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -18,32 +19,43 @@ public class ProductService {
     private ProductRepository productRepository;
 
     @Transactional(readOnly = true)
-    public ProductDTO findById(Long id){
+    public ProductDTO findById(Long id) {
         Optional<Product> result = productRepository.findById(id);
-        Product product = result.get();
-        ProductDTO productDTO = new ProductDTO(product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getImgUrl());
-        return productDTO;
+        if(result.isPresent()) {
+            Product product = result.get();
+            return convertProductToDTO(product);
+        } else {
+            throw new NoSuchElementException("Objeto de ID " + id + " não encontrado.");
+        }
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO> findAll(Pageable pageable){
+    public Page<ProductDTO> findAll(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable);
         Page<ProductDTO> productDTOS = products.map(product -> new ProductDTO(product.getId(), product.getName(), product.getDescription(), product.getPrice(), product.getImgUrl()));
         return productDTOS;
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ProductDTO insert(ProductDTO productDTO){
+    public ProductDTO insert(ProductDTO productDTO) {
         Product product = convertDTOToProduct(productDTO);
         product = productRepository.save(product);
         return convertProductToDTO(product);
     }
 
-    private ProductDTO convertProductToDTO(Product product){
+    @Transactional(rollbackFor = Exception.class)
+    public void updateProduct(Long id, ProductDTO productDTO) {
+        Product product = productRepository.getReferenceById(id);
+
+        product.setName(productDTO.name());
+        product.setDescription(productDTO.description());
+        product.setPrice(productDTO.price());
+        product.setImgUrl(productDTO.imgUrl());
+
+        productRepository.save(product);
+    }
+
+    private ProductDTO convertProductToDTO(Product product) {
         return new ProductDTO(
                 product.getId(),
                 product.getName(),
@@ -53,7 +65,7 @@ public class ProductService {
         );
     }
 
-    private Product convertDTOToProduct(ProductDTO productDTO){
+    private Product convertDTOToProduct(ProductDTO productDTO) {
         return new Product(
                 null,
                 productDTO.name(),
