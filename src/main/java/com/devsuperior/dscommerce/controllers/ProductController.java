@@ -53,7 +53,7 @@ public ResponseEntity<ProductDTO> insert(@RequestBody ProductDTO productDTO) {
 
 @PutMapping("/{id}")
 public ResponseEntity<Void> updateProduct(@PathVariable(name = "id") Long id, @RequestBody ProductDTO productDTO) {
-    productService.updateProduct(id, productDTO);
+    productService.update(id, productDTO);
     return ResponseEntity.noContent().build();
 }
 

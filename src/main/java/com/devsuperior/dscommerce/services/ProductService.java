@@ -44,7 +44,7 @@ public class ProductService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void updateProduct(Long id, ProductDTO productDTO) {
+    public void update(Long id, ProductDTO productDTO) {
         Product product = productRepository.getReferenceById(id);
 
         product.setName(productDTO.name());
