@@ -3,9 +3,11 @@ package com.devsuperior.dscommerce.services;
 import com.devsuperior.dscommerce.dto.ProductDTO;
 import com.devsuperior.dscommerce.entities.Product;
 import com.devsuperior.dscommerce.repositories.ProductRepository;
+import com.devsuperior.dscommerce.services.exceptions.IllegalParamTypeException;
 import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +30,28 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO> findAll(Pageable pageable) {
+    public Page<ProductDTO> findAll(String page, String size) {
+        Integer pageInteger = pageIsInteger(page);
+        Integer sizeInteger = sizeIsInteger(size);
+        Pageable pageable = PageRequest.of(pageInteger, sizeInteger);
         Page<Product> products = productRepository.findAll(pageable);
-        Page<ProductDTO> productDTOS = products.map(product -> new ProductDTO(product.getId(), product.getName(), product.getDescription(), product.getPrice(), product.getImgUrl()));
-        return productDTOS;
+        return products.map(product -> new ProductDTO(product.getId(), product.getName(), product.getDescription(), product.getPrice(), product.getImgUrl()));
+    }
+
+    private Integer pageIsInteger(String page){
+        try {
+            return Integer.parseInt(page);
+        } catch (NumberFormatException e) {
+            throw new IllegalParamTypeException("Valor do parâmetro page precisa ser numérico.");
+        }
+    }
+
+    private Integer sizeIsInteger(String size){
+        try {
+            return Integer.parseInt(size);
+        } catch (NumberFormatException e) {
+            throw new IllegalParamTypeException("Valor do parâmetro size precisa ser numérico.");
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
