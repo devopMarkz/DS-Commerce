@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.sql.SQLException;
 
 
 @CrossOrigin("*")
@@ -55,12 +54,8 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable(name = "id") Long id) {
-        try {
-            productService.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (SQLException e) {
-            return ResponseEntity.notFound().build();
-        }
+        productService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

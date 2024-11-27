@@ -43,6 +43,8 @@ public class ProductService {
 
     @Transactional(rollbackFor = Exception.class)
     public ProductDTO update(Long id, ProductDTO productDTO) {
+        if(!productRepository.existsById(id)) throw new ResourceNotFoundException("Recurso não encontrado.");
+
         Product product = productRepository.getReferenceById(id);
 
         product.setName(productDTO.name());
@@ -56,7 +58,9 @@ public class ProductService {
     }
 
     @Transactional(rollbackFor = {Exception.class, SQLException.class})
-    public void delete(Long id) throws SQLException {
+    public void delete(Long id) {
+        if(!productRepository.existsById(id)) throw new ResourceNotFoundException("Recurso não encontrado.");
+
         productRepository.deleteById(id);
     }
 
