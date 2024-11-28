@@ -5,6 +5,7 @@ import com.devsuperior.dscommerce.entities.Product;
 import com.devsuperior.dscommerce.repositories.ProductRepository;
 import com.devsuperior.dscommerce.services.exceptions.IllegalParamTypeException;
 import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -63,18 +64,20 @@ public class ProductService {
 
     @Transactional(rollbackFor = Exception.class)
     public ProductDTO update(Long id, ProductDTO productDTO) {
-        if(!productRepository.existsById(id)) throw new ResourceNotFoundException("Recurso não encontrado.");
+        try {
+            Product product = productRepository.getReferenceById(id);
 
-        Product product = productRepository.getReferenceById(id);
+            product.setName(productDTO.name());
+            product.setDescription(productDTO.description());
+            product.setPrice(productDTO.price());
+            product.setImgUrl(productDTO.imgUrl());
 
-        product.setName(productDTO.name());
-        product.setDescription(productDTO.description());
-        product.setPrice(productDTO.price());
-        product.setImgUrl(productDTO.imgUrl());
+            productRepository.save(product);
 
-        productRepository.save(product);
-
-        return convertProductToDTO(product);
+            return convertProductToDTO(product);
+        } catch (EntityNotFoundException e){
+            throw new ResourceNotFoundException("Recurso não encontrado.");
+        }
     }
 
     @Transactional(rollbackFor = {Exception.class, SQLException.class})
