@@ -70,10 +70,10 @@ public class ProductService {
         try {
             Product product = productRepository.getReferenceById(id);
 
-            product.setName(productDTO.name());
-            product.setDescription(productDTO.description());
-            product.setPrice(productDTO.price());
-            product.setImgUrl(productDTO.imgUrl());
+            product.setName(productDTO.getName());
+            product.setDescription(productDTO.getDescription());
+            product.setPrice(productDTO.getPrice());
+            product.setImgUrl(productDTO.getImgUrl());
 
             productRepository.save(product);
 
@@ -106,10 +106,10 @@ public class ProductService {
     private Product convertDTOToProduct(ProductDTO productDTO) {
         return new Product(
                 null,
-                productDTO.name(),
-                productDTO.description(),
-                productDTO.price(),
-                productDTO.imgUrl()
+                productDTO.getName(),
+                productDTO.getDescription(),
+                productDTO.getPrice(),
+                productDTO.getImgUrl()
         );
     }
 
