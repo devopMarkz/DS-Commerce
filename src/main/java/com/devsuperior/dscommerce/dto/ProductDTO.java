@@ -14,6 +14,7 @@ public class ProductDTO {
     private String name;
     @NotBlank(message = "Descrição não pode estar vazia.")
     private String description;
+    @Positive(message = "Valor deve ser positivo.")
     private Double price;
     private String imgUrl;
 
