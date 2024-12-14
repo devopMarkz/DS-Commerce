@@ -34,11 +34,11 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO> findAll(String page, String size) {
+    public Page<ProductDTO> findAll(String name, String page, String size) {
         Integer pageInteger = pageIsInteger(page);
         Integer sizeInteger = sizeIsInteger(size);
         Pageable pageable = PageRequest.of(pageInteger, sizeInteger);
-        Page<Product> products = productRepository.findAll(pageable);
+        Page<Product> products = productRepository.searchByName(name, pageable);
         return products.map(product -> new ProductDTO(product.getId(), product.getName(), product.getDescription(), product.getPrice(), product.getImgUrl()));
     }
 

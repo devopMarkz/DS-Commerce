@@ -27,9 +27,10 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductDTO>> findAll(@RequestParam(name = "page", defaultValue = "0") String page,
+    public ResponseEntity<Page<ProductDTO>> findAll(@RequestParam(name = "name", defaultValue = "") String name,
+                                                    @RequestParam(name = "page", defaultValue = "0") String page,
                                                     @RequestParam(name = "size", defaultValue = "10") String size) {
-        Page<ProductDTO> productDTOS = productService.findAll(page, size);
+        Page<ProductDTO> productDTOS = productService.findAll(name, page, size);
         return ResponseEntity.ok(productDTOS);
     }
 
