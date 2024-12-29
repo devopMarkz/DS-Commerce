@@ -1,117 +1,88 @@
 package com.devsuperior.dscommerce.services;
 
-import com.devsuperior.dscommerce.dto.ProductDTO;
-import com.devsuperior.dscommerce.dto.ProductMinDTO;
-import com.devsuperior.dscommerce.entities.Product;
-import com.devsuperior.dscommerce.repositories.ProductRepository;
-import com.devsuperior.dscommerce.services.exceptions.DatabaseException;
-import com.devsuperior.dscommerce.services.exceptions.IllegalParamTypeException;
-import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
-import java.util.Optional;
+import com.devsuperior.dscommerce.dto.CategoryDTO;
+import com.devsuperior.dscommerce.dto.ProductDTO;
+import com.devsuperior.dscommerce.dto.ProductMinDTO;
+import com.devsuperior.dscommerce.entities.Category;
+import com.devsuperior.dscommerce.entities.Product;
+import com.devsuperior.dscommerce.repositories.ProductRepository;
+import com.devsuperior.dscommerce.services.exceptions.DatabaseException;
+import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class ProductService {
 
     @Autowired
-    private ProductRepository productRepository;
+    private ProductRepository repository;
 
     @Transactional(readOnly = true)
     public ProductDTO findById(Long id) {
-        Optional<Product> result = productRepository.findById(id);
-        Product product = result.orElseThrow(
-                () -> new ResourceNotFoundException("Recurso não encontrado."));
-        return convertProductToDTO(product);
+        Product product = repository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Recurso não encontrado"));
+        return new ProductDTO(product);
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductMinDTO> findAll(String name, String page, String size) {
-        Integer pageInteger = pageIsInteger(page);
-        Integer sizeInteger = sizeIsInteger(size);
-        Pageable pageable = PageRequest.of(pageInteger, sizeInteger);
-        Page<Product> products = productRepository.searchByName(name, pageable);
-        return products.map(ProductMinDTO::new);
+    public Page<ProductMinDTO> findAll(String name, Pageable pageable) {
+        Page<Product> result = repository.searchByName(name, pageable);
+        return result.map(x -> new ProductMinDTO(x));
     }
 
-    private Integer pageIsInteger(String page){
+    @Transactional
+    public ProductDTO insert(ProductDTO dto) {
+        Product entity = new Product();
+        copyDtoToEntity(dto, entity);
+        entity = repository.save(entity);
+        return new ProductDTO(entity);
+    }
+
+    @Transactional
+    public ProductDTO update(Long id, ProductDTO dto) {
         try {
-            return Integer.parseInt(page);
-        } catch (NumberFormatException e) {
-            throw new IllegalParamTypeException("Valor do parâmetro page precisa ser numérico.");
+            Product entity = repository.getReferenceById(id);
+            copyDtoToEntity(dto, entity);
+            entity = repository.save(entity);
+            return new ProductDTO(entity);
+        }
+        catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException("Recurso não encontrado");
         }
     }
 
-    private Integer sizeIsInteger(String size){
-        try {
-            return Integer.parseInt(size);
-        } catch (NumberFormatException e) {
-            throw new IllegalParamTypeException("Valor do parâmetro size precisa ser numérico.");
-        }
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public ProductDTO insert(ProductDTO productDTO) {
-        Product product = convertDTOToProduct(productDTO);
-        product = productRepository.save(product);
-        return convertProductToDTO(product);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public ProductDTO update(Long id, ProductDTO productDTO) {
-        try {
-            Product product = productRepository.getReferenceById(id);
-
-            product.setName(productDTO.getName());
-            product.setDescription(productDTO.getDescription());
-            product.setPrice(productDTO.getPrice());
-            product.setImgUrl(productDTO.getImgUrl());
-
-            productRepository.save(product);
-
-            return convertProductToDTO(product);
-        } catch (EntityNotFoundException e){
-            throw new ResourceNotFoundException("Recurso não encontrado.");
-        }
-    }
-
-    @Transactional(rollbackFor = {Exception.class, SQLException.class}, propagation = Propagation.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS)
     public void delete(Long id) {
-        if(!productRepository.existsById(id)) throw new ResourceNotFoundException("Recurso não encontrado.");
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Recurso não encontrado");
+        }
         try {
-            productRepository.deleteById(id);
-        } catch (DataIntegrityViolationException e) {
-            throw new DatabaseException("Falha de integridade referencial.");
+            repository.deleteById(id);
+        }
+        catch (DataIntegrityViolationException e) {
+            throw new DatabaseException("Falha de integridade referencial");
         }
     }
 
-    private ProductDTO convertProductToDTO(Product product) {
-        return new ProductDTO(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getImgUrl()
-        );
-    }
+    private void copyDtoToEntity(ProductDTO dto, Product entity) {
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
+        entity.setPrice(dto.getPrice());
+        entity.setImgUrl(dto.getImgUrl());
 
-    private Product convertDTOToProduct(ProductDTO productDTO) {
-        return new Product(
-                null,
-                productDTO.getName(),
-                productDTO.getDescription(),
-                productDTO.getPrice(),
-                productDTO.getImgUrl()
-        );
+        entity.getCategories().clear();
+        for (CategoryDTO catDto : dto.getCategories()) {
+            Category cat = new Category();
+            cat.setId(catDto.getId());
+            entity.getCategories().add(cat);
+        }
     }
-
 }

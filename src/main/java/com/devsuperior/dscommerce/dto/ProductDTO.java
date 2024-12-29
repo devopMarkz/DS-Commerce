@@ -1,29 +1,51 @@
 package com.devsuperior.dscommerce.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.devsuperior.dscommerce.entities.Category;
+import com.devsuperior.dscommerce.entities.Product;
+
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-
-import java.util.Objects;
 
 public class ProductDTO {
 
     private Long id;
-    @NotBlank(message = "Nome não pode estar vazio.")
-    @Size(min = 3, max = 100, message = "Mínimo de 3 caracteres e máximo de 100 caracteres.")
+    @Size(min = 3, max = 80, message = "Nome precisar ter de 3 a 80 caracteres")
+    @NotBlank(message = "Campo requerido")
     private String name;
-    @NotBlank(message = "Descrição não pode estar vazia.")
+    @Size(min = 10, message = "Descrição precisa ter no mínimo 10 caracteres")
+    @NotBlank(message = "Campo requerido")
     private String description;
-    @Positive(message = "Valor deve ser positivo.")
+    @NotNull(message = "Campo requerido")
+    @Positive(message = "O preço deve ser positivo")
     private Double price;
     private String imgUrl;
 
-    public ProductDTO(Long id, String name, String description, Double price, String imgUrl){
+    @NotEmpty(message = "Deve ter pelo menos uma categoria")
+    private List<CategoryDTO> categories = new ArrayList<>();
+
+    public ProductDTO(Long id, String name, String description, Double price, String imgUrl) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.imgUrl = imgUrl;
+    }
+
+    public ProductDTO(Product entity) {
+        id = entity.getId();
+        name = entity.getName();
+        description = entity.getDescription();
+        price = entity.getPrice();
+        imgUrl = entity.getImgUrl();
+        for (Category cat : entity.getCategories()) {
+            categories.add(new CategoryDTO(cat));
+        }
     }
 
     public Long getId() {
@@ -46,16 +68,7 @@ public class ProductDTO {
         return imgUrl;
     }
 
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        ProductDTO that = (ProductDTO) object;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
+    public List<CategoryDTO> getCategories() {
+        return categories;
     }
 }
