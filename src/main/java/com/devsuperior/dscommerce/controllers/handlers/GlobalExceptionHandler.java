@@ -1,12 +1,9 @@
 package com.devsuperior.dscommerce.controllers.handlers;
 
-import com.devsuperior.dscommerce.dto.CustomErrorDTO;
+import java.time.Instant;
+
 import com.devsuperior.dscommerce.dto.FieldMessage;
 import com.devsuperior.dscommerce.dto.ValidationError;
-import com.devsuperior.dscommerce.services.exceptions.DatabaseException;
-import com.devsuperior.dscommerce.services.exceptions.IllegalParamTypeException;
-import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,42 +11,44 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.time.Instant;
+import com.devsuperior.dscommerce.dto.CustomErrorDTO;
+import com.devsuperior.dscommerce.services.exceptions.DatabaseException;
+import com.devsuperior.dscommerce.services.exceptions.ForbiddenException;
+import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<CustomErrorDTO> resourceNotFound(ResourceNotFoundException e, HttpServletRequest request){
+    public ResponseEntity<CustomErrorDTO> resourceNotFound(ResourceNotFoundException e, HttpServletRequest request) {
         HttpStatus status = HttpStatus.NOT_FOUND;
-        CustomErrorDTO errorDTO = new CustomErrorDTO(Instant.now(), status.value(), e.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(status).body(errorDTO);
-    }
-
-    @ExceptionHandler(IllegalParamTypeException.class)
-    public ResponseEntity<CustomErrorDTO> illegalParamType(IllegalParamTypeException e, HttpServletRequest request){
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        CustomErrorDTO errorDTO = new CustomErrorDTO(Instant.now(), status.value(), e.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(status).body(errorDTO);
+        CustomErrorDTO err = new CustomErrorDTO(Instant.now(), status.value(), e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
     }
 
     @ExceptionHandler(DatabaseException.class)
-    public ResponseEntity<CustomErrorDTO> database(DatabaseException e, HttpServletRequest request){
-        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-        CustomErrorDTO customErrorDTO = new CustomErrorDTO(Instant.now(), httpStatus.value(), e.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(httpStatus).body(customErrorDTO);
+    public ResponseEntity<CustomErrorDTO> database(DatabaseException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        CustomErrorDTO err = new CustomErrorDTO(Instant.now(), status.value(), e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<CustomErrorDTO> methodArgumentNotValid(MethodArgumentNotValidException e, HttpServletRequest request){
+    public ResponseEntity<CustomErrorDTO> methodArgumentNotValidation(MethodArgumentNotValidException e, HttpServletRequest request) {
         HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
-        ValidationError errorDTO = new ValidationError(Instant.now(), status.value(), "Erro de entrada de dados", request.getRequestURI());
-        for(FieldError f : e.getFieldErrors()) {
-            String fieldError = f.getField();
-            String message = f.getDefaultMessage();
-            errorDTO.addFieldMessage(new FieldMessage(fieldError, message));
+        ValidationError err = new ValidationError(Instant.now(), status.value(), "Dados inválidos", request.getRequestURI());
+        for (FieldError f : e.getBindingResult().getFieldErrors()) {
+            err.getErrors().add(new FieldMessage(f.getField(), f.getDefaultMessage()));
         }
-        return ResponseEntity.status(status).body(errorDTO);
+        return ResponseEntity.status(status).body(err);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<CustomErrorDTO> forbidden(ForbiddenException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        CustomErrorDTO err = new CustomErrorDTO(Instant.now(), status.value(), e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(err);
+    }
 }
